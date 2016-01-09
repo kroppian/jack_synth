@@ -3,6 +3,6 @@ Practice making a synthesizer that interfaces with jack. The synthesizer is base
 
 To compile the program:
 
-```gcc simple_client.c -o simple_client -ljack -lm```
+```gcc jack_synth.c -o jack_synth -ljack -lm```
 
 To play the synth, use the numbers on your keyboard (0 through 9) to play different pitch. Each tone is the 1/n of the original tone played, where n is the number pressed on the keyboard.
