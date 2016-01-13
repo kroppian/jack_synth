@@ -25,14 +25,18 @@ int pitch_ctr;
 #define M_PI  (3.14159265)
 #endif
 
-#define TABLE_SIZE   (218)
+#define MAX_TABLE_SIZE   (110)
 typedef struct
 {
-    float sine[TABLE_SIZE];
+
     int left_phase;
     int right_phase;
+    int table_size; 
+    float sine[MAX_TABLE_SIZE];
+
 }
 paTestData;
+paTestData current_data;
 
 static void signal_handler(int sig)
 {
@@ -40,6 +44,25 @@ static void signal_handler(int sig)
 	fprintf(stderr, "signal received, exiting ...\n");
 	exit(0);
 }
+
+//                                a/A,    w/A#,     s/B,      d/C,      r/C#,     f/D,      t/D#,     g/E,      h/F,      u/F#,     j/G,      i/G# 
+//static char key_lookup[12][2] = {{97,0},  {119,1},  {115,2},  {100,3},  {114,4},  {102,5},  {116,6},  {103,7},  {104,8},  {117,9},  {106,10}, {105,11}   };
+static char note_lookup[12] = {97,  119,  115,  100,  114,  102, 116,  103,  104,  117,  106, 105 };
+
+static int table_size_for_pitch[12] = {109,103,97,91,87,82,77,73,69,65,61,58};
+
+int getnote(int ascii_num){
+
+  for(int i = 0; i < 12; i++){
+ 
+    if(note_lookup[i] == ascii_num) return i;
+
+  }
+
+  return -1;
+
+}
+
 
 char getch() {
   char buf = 0;
@@ -74,6 +97,7 @@ char getch() {
 int
 process (jack_nframes_t nframes, void *arg)
 {
+
 	jack_default_audio_sample_t *out1, *out2;
 	paTestData *data = (paTestData*)arg;
 	int i;
@@ -85,9 +109,9 @@ process (jack_nframes_t nframes, void *arg)
         out1[i] = data->sine[data->left_phase];  /* left */
         out2[i] = data->sine[data->right_phase];  /* right */
         data->left_phase += pitch_ctr;
-        if( data->left_phase >= TABLE_SIZE ) data->left_phase -= TABLE_SIZE;
-        data->right_phase += pitch_ctr; /* higher pitch so we can distinguish left and right. */
-        if( data->right_phase >= TABLE_SIZE ) data->right_phase -= TABLE_SIZE;
+        if( data->left_phase >= current_data.table_size ) data->left_phase -= current_data.table_size;
+        data->right_phase += pitch_ctr;
+        if( data->right_phase >= current_data.table_size ) data->right_phase -= current_data.table_size;
     }
   
 	return 0;      
@@ -103,6 +127,18 @@ jack_shutdown (void *arg)
 	exit (1);
 }
 
+void populate_data_table(int new_table_size){
+
+  current_data.table_size = new_table_size;
+
+	for(int i=0; i<current_data.table_size; i++ )
+    {
+      current_data.sine[i] = 0.2 * (float) sin( ((double)i/(double)MAX_TABLE_SIZE) * M_PI * 2.0 );
+    }
+  current_data.left_phase = current_data.right_phase = 0;
+
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -111,7 +147,7 @@ main (int argc, char *argv[])
 	const char *server_name = NULL;
 	jack_options_t options = JackNullOption;
 	jack_status_t status;
-	paTestData data;
+	//paTestData data;
 	int i;
 
   pitch_ctr = 1;
@@ -132,12 +168,8 @@ main (int argc, char *argv[])
 		}
 	}
 
-	for( i=0; i<TABLE_SIZE; i++ )
-    {
-        data.sine[i] = 0.2 * (float) sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2. );
-    }
-    data.left_phase = data.right_phase = 0;
 
+  populate_data_table(table_size_for_pitch[0]);
 	/* open a client connection to the JACK server */
 
 	client = jack_client_open (client_name, options, &status, server_name);
@@ -161,7 +193,7 @@ main (int argc, char *argv[])
 	   there is work to be done.
 	*/
 
-	jack_set_process_callback (client, process, &data);
+	jack_set_process_callback (client, process, &current_data);
 
 	/* tell the JACK server to call `jack_shutdown()' if
 	   it ever shuts down, either entirely, or if it
@@ -192,6 +224,7 @@ main (int argc, char *argv[])
 		fprintf (stderr, "cannot activate client");
 		exit (1);
 	}
+
 
 	/* Connect the ports.  You can't do this before the client is
 	 * activated, because we can't make connections to clients
@@ -238,7 +271,7 @@ main (int argc, char *argv[])
     nxt_candid = getch();
 
     if((char) nxt_candid == 'q') break; 
-    else if(nxt_candid - 48 >= 0 && nxt_candid - 48 < 10 ) pitch_ctr = nxt_candid - 48;
+    else if( -1 != (nxt_candid = getnote(nxt_candid)) ) populate_data_table(table_size_for_pitch[nxt_candid]);
 
 	}
 
