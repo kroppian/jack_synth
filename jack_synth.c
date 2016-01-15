@@ -127,16 +127,48 @@ jack_shutdown (void *arg)
 	exit (1);
 }
 
-void populate_data_table(int new_table_size){
+void populate_data_table(int new_table_size, int mode){
 
-  current_data.table_size = new_table_size;
+  current_data.table_size = new_table_size ;
 
-	for(int i=0; i<current_data.table_size; i++ )
-    {
-      current_data.sine[i] = 0.2 * (float) sin( ((double)i/(double)MAX_TABLE_SIZE) * M_PI * 2.0 );
+  // Build a sine wave
+  if (mode == 1){
+
+    for(int i=0; i<current_data.table_size; i++ )
+      {
+        current_data.sine[i] = 0.2 * (float) sin( ((double)i/(double)MAX_TABLE_SIZE) * M_PI * 2.0 );
+      }
+
+  // Build a square wave
+  }else if (mode == 2){
+ 
+    for(int i=0; i<current_data.table_size; i++ ) {
+    
+      if (i < current_data.table_size / 2){
+     
+        current_data.sine[i] = 0.2;
+      
+      }else {
+     
+        current_data.sine[i] = - 0.2;
+      
+      }
+
     }
-  current_data.left_phase = current_data.right_phase = 0;
 
+  // Build a sawtooth wave 
+  }else if (mode == 3){
+ 
+    for(int i=0; i<current_data.table_size; i++ ) {
+    
+      current_data.sine[i] = (0.4 * ((float) i / (float) current_data.table_size)) - 0.2;
+
+    }
+     
+  
+  }
+
+    current_data.left_phase = current_data.right_phase = 0;
 }
 
 int
@@ -169,7 +201,7 @@ main (int argc, char *argv[])
 	}
 
 
-  populate_data_table(table_size_for_pitch[0]);
+  populate_data_table(table_size_for_pitch[0],1);
 	/* open a client connection to the JACK server */
 
 	client = jack_client_open (client_name, options, &status, server_name);
@@ -265,13 +297,15 @@ main (int argc, char *argv[])
 
 	/* keep running until the Ctrl+C */
 
-  int nxt_candid;  
+  int current_mode = 1; 
+  int nxt_candid, old_candid;  
 	while (1) {
-  
+ 
     nxt_candid = getch();
 
     if((char) nxt_candid == 'q') break; 
-    else if( -1 != (nxt_candid = getnote(nxt_candid)) ) populate_data_table(table_size_for_pitch[nxt_candid]);
+    else if (nxt_candid >= 49 && nxt_candid <= 51) { current_mode = nxt_candid - 48;  populate_data_table(current_data.table_size,current_mode); }
+    else if( -1 != (nxt_candid = getnote(nxt_candid)) ) populate_data_table(table_size_for_pitch[nxt_candid],current_mode);
 
 	}
 
