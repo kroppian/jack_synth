@@ -3,9 +3,9 @@ Practice making a synthesizer that interfaces with jack. The synthesizer is base
 
 ## Requirements
 
-You need to have a working install of JACK. Jack stands for Jack Audio Connection Kit. It basically is a common interface that professional audio programs can write to. For example, you can route the audio from a youtube video through an Equilizer. Or, if you have an audio interface, you can route your guitar through the same Equilizer software and then through an virtual guitar amp. It's a really powerful open source library that I've used for the last year or so. 
+You need to have a working install of JACK. Jack stands for Jack Audio Connection Kit. It is a common interface that professional audio programs can read from and write to. For example, you can route audio from a youtube video through an equalizer. Or, if you have an audio interface, you can route your guitar through the same equalizer software and then through a virtual guitar amp. It's a powerful open source library with great documentation and an easy API to work with. 
 
-Setting up JACK is beyond the scope of this document, but if you use Arch Linux (or other distros) like me, you can follow this splendid [tutorial on the Arch Linux Wiki](https://wiki.archlinux.org/index.php/JACK_Audio_Connection_Kit) . I also know that JACK is available on Windows and Mac OSX, so I'm sure you can dig up documentation on that. 
+Setting up JACK is beyond the scope of this document, but if you use Arch Linux (or other similar distros) like me, you can follow this splendid [tutorial on the Arch Linux Wiki](https://wiki.archlinux.org/index.php/JACK_Audio_Connection_Kit) . I also know that JACK is available on Windows and Mac OSX, so I'm sure you can dig up documentation for those OSes. 
 
 ## Compiling the program on Linux:
 
@@ -13,7 +13,7 @@ Setting up JACK is beyond the scope of this document, but if you use Arch Linux 
 
 ## Playing the synth
 
-There are three modes. Sine wave, square wave and sawtooth wave. When you start the program, it defaults to the sine wave, but you can switch to different wave forms by using the 1-3 keys on your keyboard:
+There are three modes. Sine wave, square wave and sawtooth wave. When you start the program, it defaults to the sine wave, but you can switch to different waveforms by using the 1-3 keys on your keyboard:
 
 1. Sine
 2. Square
@@ -36,6 +36,6 @@ You can play one octave, starting with an "A", by hitting the "A" key on your ke
 | J               | G             |
 | I               | G#            |
 
-## Future inhancements 
+## Future enhancements 
 
 For some reason, the Sine wave becomes slightly distorted once you go higher than A. Something to investigate. 
