@@ -26,8 +26,7 @@ int pitch_ctr;
 #endif
 
 #define MAX_TABLE_SIZE   (110)
-typedef struct
-{
+typedef struct {
 
     int left_phase;
     int right_phase;
@@ -38,17 +37,17 @@ typedef struct
 paTestData;
 paTestData current_data;
 
-static void signal_handler(int sig)
-{
+static void signal_handler(int sig) {
+
 	jack_client_close(client);
 	fprintf(stderr, "signal received, exiting ...\n");
 	exit(0);
+
 }
 
 //                                a/A,    w/A#,     s/B,      d/C,      r/C#,     f/D,      t/D#,     g/E,      h/F,      u/F#,     j/G,      i/G# 
 //static char key_lookup[12][2] = {{97,0},  {119,1},  {115,2},  {100,3},  {114,4},  {102,5},  {116,6},  {103,7},  {104,8},  {117,9},  {106,10}, {105,11}   };
 static char note_lookup[12] = {97,  119,  115,  100,  114,  102, 116,  103,  104,  117,  106, 105 };
-
 static int table_size_for_pitch[12] = {109,103,97,91,87,82,77,73,69,65,61,58};
 
 int getnote(int ascii_num){
@@ -65,22 +64,28 @@ int getnote(int ascii_num){
 
 
 char getch() {
+
   char buf = 0;
   struct termios old = {0};
+
   if (tcgetattr(0, &old) < 0)
           perror("tcsetattr()");
+
   old.c_lflag &= ~ICANON;
   old.c_lflag &= ~ECHO;
   old.c_cc[VMIN] = 1;
   old.c_cc[VTIME] = 0;
   if (tcsetattr(0, TCSANOW, &old) < 0)
           perror("tcsetattr ICANON");
+
   if (read(0, &buf, 1) < 0)
           perror ("read()");
+
   old.c_lflag |= ICANON;
   old.c_lflag |= ECHO;
   if (tcsetattr(0, TCSADRAIN, &old) < 0)
           perror ("tcsetattr ~ICANON");
+
   return (buf);
 }
 
@@ -104,15 +109,18 @@ process (jack_nframes_t nframes, void *arg)
 	out1 = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port1, nframes);
 	out2 = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port2, nframes);
 
-	for( i=0; i<nframes; i++ )
-    {
+	for( i=0; i<nframes; i++ ) {
+
         out1[i] = data->sine[data->left_phase];  /* left */
         out2[i] = data->sine[data->right_phase];  /* right */
         data->left_phase += pitch_ctr;
         if( data->left_phase >= current_data.table_size ) data->left_phase -= current_data.table_size;
+
         data->right_phase += pitch_ctr;
+
         if( data->right_phase >= current_data.table_size ) data->right_phase -= current_data.table_size;
-    }
+
+  }
   
 	return 0;      
 }
@@ -122,9 +130,10 @@ process (jack_nframes_t nframes, void *arg)
  * decides to disconnect the client.
  */
 void
-jack_shutdown (void *arg)
-{
+jack_shutdown (void *arg) {
+
 	exit (1);
+
 }
 
 void populate_data_table(int new_table_size, int mode){
@@ -134,10 +143,11 @@ void populate_data_table(int new_table_size, int mode){
   // Build a sine wave
   if (mode == 1){
 
-    for(int i=0; i<current_data.table_size; i++ )
-      {
+    for(int i=0; i<current_data.table_size; i++ ) {
+
         current_data.sine[i] = 0.2 * (float) sin( ((double)i/(double)MAX_TABLE_SIZE) * M_PI * 2.0 );
-      }
+
+    }
 
   // Build a square wave
   }else if (mode == 2){
@@ -164,16 +174,16 @@ void populate_data_table(int new_table_size, int mode){
       current_data.sine[i] = (0.4 * ((float) i / (float) current_data.table_size)) - 0.2;
 
     }
-     
   
   }
 
-    current_data.left_phase = current_data.right_phase = 0;
+  current_data.left_phase = current_data.right_phase = 0;
+
 }
 
 int
-main (int argc, char *argv[])
-{
+main (int argc, char *argv[]) {
+
 	const char **ports;
 	const char *client_name;
 	const char *server_name = NULL;
@@ -185,19 +195,30 @@ main (int argc, char *argv[])
   pitch_ctr = 1;
 
 	if (argc >= 2) {		/* client name specified? */
+
 		client_name = argv[1];
 		if (argc >= 3) {	/* server name specified? */
+
 			server_name = argv[2];
-            int my_option = JackNullOption | JackServerName;
+      int my_option = JackNullOption | JackServerName;
 			options = (jack_options_t)my_option;
+
 		}
+
 	} else {			/* use basename of argv[0] */
+
 		client_name = strrchr(argv[0], '/');
+
 		if (client_name == 0) {
+
 			client_name = argv[0];
+
 		} else {
+
 			client_name++;
+
 		}
+
 	}
 
 
@@ -206,19 +227,27 @@ main (int argc, char *argv[])
 
 	client = jack_client_open (client_name, options, &status, server_name);
 	if (client == NULL) {
+
 		fprintf (stderr, "jack_client_open() failed, "
 			 "status = 0x%2.0x\n", status);
 		if (status & JackServerFailed) {
+
 			fprintf (stderr, "Unable to connect to JACK server\n");
+
 		}
 		exit (1);
 	}
+
 	if (status & JackServerStarted) {
+
 		fprintf (stderr, "JACK server started\n");
+
 	}
 	if (status & JackNameNotUnique) {
+
 		client_name = jack_get_client_name(client);
 		fprintf (stderr, "unique name `%s' assigned\n", client_name);
+
 	}
 
 	/* tell the JACK server to call `process()' whenever
@@ -245,16 +274,20 @@ main (int argc, char *argv[])
 					  JackPortIsOutput, 0);
 
 	if ((output_port1 == NULL) || (output_port2 == NULL)) {
+
 		fprintf(stderr, "no more JACK ports available\n");
 		exit (1);
+
 	}
 
 	/* Tell the JACK server that we are ready to roll.  Our
 	 * process() callback will start running now. */
 
 	if (jack_activate (client)) {
+
 		fprintf (stderr, "cannot activate client");
 		exit (1);
+
 	}
 
 
@@ -268,17 +301,24 @@ main (int argc, char *argv[])
  	
 	ports = jack_get_ports (client, NULL, NULL,
 				JackPortIsPhysical|JackPortIsInput);
+
 	if (ports == NULL) {
+
 		fprintf(stderr, "no physical playback ports\n");
 		exit (1);
+
 	}
 
 	if (jack_connect (client, jack_port_name (output_port1), ports[0])) {
+
 		fprintf (stderr, "cannot connect output ports\n");
+
 	}
 
 	if (jack_connect (client, jack_port_name (output_port2), ports[1])) {
+
 		fprintf (stderr, "cannot connect output ports\n");
+
 	}
 
 	jack_free (ports);
@@ -297,18 +337,26 @@ main (int argc, char *argv[])
 
 	/* keep running until the Ctrl+C */
 
+  // Mode specifies the type of wave form generated. 1 is Sine, 2 is square and 3 is sawtooth.
   int current_mode = 1; 
   int nxt_candid, old_candid;  
 	while (1) {
- 
+
+    // Get the next character entered by the user 
     nxt_candid = getch();
 
-    if((char) nxt_candid == 'q') break; 
-    else if (nxt_candid >= 49 && nxt_candid <= 51) { current_mode = nxt_candid - 48;  populate_data_table(current_data.table_size,current_mode); }
-    else if( -1 != (nxt_candid = getnote(nxt_candid)) ) populate_data_table(table_size_for_pitch[nxt_candid],current_mode);
+    // If the user enters the ASCII characters 1 through 3, then they want to alter the wave form
+    if (nxt_candid >= 49 && nxt_candid <= 51) { 
 
-	}
+      current_mode = nxt_candid - 48;  
+      populate_data_table(current_data.table_size,current_mode); 
+
+    } else if( -1 != (nxt_candid = getnote(nxt_candid)) ) 
+      populate_data_table(table_size_for_pitch[nxt_candid],current_mode);
+
+  }
 
 	jack_client_close (client);
 	exit (0);
+
 }
